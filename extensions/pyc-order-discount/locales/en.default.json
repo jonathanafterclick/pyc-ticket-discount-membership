@@ -1,0 +1,4 @@
+{
+  "name": "PYC Order Discount",
+  "description": "Applies a dynamic order discount based on the number of eligible Puppy Yoga tickets."
+}

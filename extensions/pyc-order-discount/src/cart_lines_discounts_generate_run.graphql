@@ -1,0 +1,28 @@
+query CartInput {
+  cart {
+    buyerIdentity {
+      customer {
+        id
+        membershipCredits: metafield(namespace: "custom", key: "membership_credits") {
+          value
+        }
+      }
+    }
+    lines {
+      id
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          product {
+            id
+          }
+        }
+      }
+    }
+  }
+  discount {
+    discountClasses
+  }
+}
