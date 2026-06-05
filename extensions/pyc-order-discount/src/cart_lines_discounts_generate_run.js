@@ -64,13 +64,13 @@ export function cartLinesDiscountsGenerateRun(input) {
    * DISCOUNT 1:
    * Existing member credits → free ticket(s)
    *
-   * Important:
-   * Cancelled members can keep using remaining credits
-   * until their paid membership period expires.
-   *
    * Rule:
    * membership_credits > 0
-   * AND last_membership_renewal <= 33 days ago
+   * AND last_membership_renewal is within 33 days of current checkout time.
+   *
+   * Important:
+   * We intentionally do NOT check membership_status here.
+   * A cancelled member can still use remaining credits during their paid period.
    */
   if (hasProductDiscountClass) {
     const credits = Number(
@@ -80,8 +80,11 @@ export function cartLinesDiscountsGenerateRun(input) {
     const lastMembershipRenewal =
       input.cart.buyerIdentity?.customer?.lastMembershipRenewal?.value || null;
 
+    const currentDateTime = input.shop?.localTime?.date || null;
+
     const membershipStillValid =
-      credits > 0 && isMembershipWithinValidPeriod(lastMembershipRenewal);
+      credits > 0 &&
+      isMembershipWithinValidPeriod(lastMembershipRenewal, currentDateTime);
 
     if (membershipStillValid) {
       let remainingCredits = credits;
@@ -181,16 +184,17 @@ export function cartLinesDiscountsGenerateRun(input) {
   return { operations };
 }
 
-function isMembershipWithinValidPeriod(lastMembershipRenewal) {
-  if (!lastMembershipRenewal) return false;
+function isMembershipWithinValidPeriod(lastMembershipRenewal, currentDateTime) {
+  if (!lastMembershipRenewal || !currentDateTime) return false;
 
   const renewalDate = new Date(lastMembershipRenewal);
+  const now = new Date(currentDateTime);
 
   if (Number.isNaN(renewalDate.getTime())) return false;
+  if (Number.isNaN(now.getTime())) return false;
 
-  const now = new Date();
   const diffMs = now.getTime() - renewalDate.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-  return diffDays <= MEMBERSHIP_VALID_DAYS;
+  return diffDays >= -1 && diffDays <= MEMBERSHIP_VALID_DAYS;
 }

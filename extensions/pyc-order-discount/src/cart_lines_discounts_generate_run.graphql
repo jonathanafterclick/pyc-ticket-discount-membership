@@ -1,4 +1,9 @@
 query CartInput {
+  shop {
+    localTime {
+      date
+    }
+  }
   cart {
     buyerIdentity {
       customer {
