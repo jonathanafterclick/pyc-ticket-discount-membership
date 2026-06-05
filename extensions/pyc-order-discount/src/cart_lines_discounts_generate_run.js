@@ -29,6 +29,7 @@ const MEMBERSHIP_VARIANT_TO_TIER = {
 const TICKET_PRICE = 69;
 const SIGNUP_DISCOUNT_PER_TICKET = 10;
 const MAX_TICKETS = 4;
+const MEMBERSHIP_VALID_DAYS = 33;
 
 export function cartLinesDiscountsGenerateRun(input) {
   const operations = [];
@@ -62,13 +63,27 @@ export function cartLinesDiscountsGenerateRun(input) {
   /**
    * DISCOUNT 1:
    * Existing member credits → free ticket(s)
+   *
+   * Important:
+   * Cancelled members can keep using remaining credits
+   * until their paid membership period expires.
+   *
+   * Rule:
+   * membership_credits > 0
+   * AND last_membership_renewal <= 33 days ago
    */
   if (hasProductDiscountClass) {
     const credits = Number(
       input.cart.buyerIdentity?.customer?.membershipCredits?.value || 0,
     );
 
-    if (credits > 0) {
+    const lastMembershipRenewal =
+      input.cart.buyerIdentity?.customer?.lastMembershipRenewal?.value || null;
+
+    const membershipStillValid =
+      credits > 0 && isMembershipWithinValidPeriod(lastMembershipRenewal);
+
+    if (membershipStillValid) {
       let remainingCredits = credits;
       const productTargets = [];
 
@@ -164,4 +179,18 @@ export function cartLinesDiscountsGenerateRun(input) {
   }
 
   return { operations };
+}
+
+function isMembershipWithinValidPeriod(lastMembershipRenewal) {
+  if (!lastMembershipRenewal) return false;
+
+  const renewalDate = new Date(lastMembershipRenewal);
+
+  if (Number.isNaN(renewalDate.getTime())) return false;
+
+  const now = new Date();
+  const diffMs = now.getTime() - renewalDate.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  return diffDays <= MEMBERSHIP_VALID_DAYS;
 }

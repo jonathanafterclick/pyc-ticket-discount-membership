@@ -6,6 +6,9 @@ query CartInput {
         membershipCredits: metafield(namespace: "custom", key: "membership_credits") {
           value
         }
+        lastMembershipRenewal: metafield(namespace: "custom", key: "last_membership_renewal") {
+          value
+        }
       }
     }
     lines {
